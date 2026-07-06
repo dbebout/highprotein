@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ProteinPlan">
+<meta name="theme-color" content="#C1502E">
+<title>ProteinPlan — High Protein Meal Planner</title>
+<style>
+  :root{
+    --bg:#FAF6EF;
+    --bg-alt:#F1EAD9;
+    --ink:#201E1B;
+    --ink-soft:#6B655A;
+    --accent:#C1502E;
+    --accent-dark:#9E3E22;
+    --accent-tint:#F4DCCF;
+    --good:#4F7A55;
+    --good-tint:#DCE9DC;
+    --warn:#C98A2C;
+    --warn-tint:#F3E3C7;
+    --bad:#B3433D;
+    --bad-tint:#F3D9D6;
+    --card:#FFFFFF;
+    --border:#E7DFCB;
+    --radius:18px;
+    --radius-sm:12px;
+    --shadow:0 4px 16px rgba(32,30,27,0.09);
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    --serif: ui-serif, Georgia, "Iowan Old Style", serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#1B1815;
+      --bg-alt:#242019;
+      --ink:#F3EEE4;
+      --ink-soft:#B9B2A4;
+      --accent:#E27A50;
+      --accent-dark:#F4A17E;
+      --accent-tint:#3A2620;
+      --good:#7FBF88;
+      --good-tint:#203324;
+      --warn:#E0A94B;
+      --warn-tint:#372B16;
+      --bad:#E37A72;
+      --bad-tint:#3A201E;
+      --card:#242019;
+      --border:#39332B;
+      --shadow:0 4px 20px rgba(0,0,0,0.35);
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);}
+  body{
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+    min-height:100vh;
+  }
+  h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0;}
+  button{font-family:inherit;}
+  #app{max-width:520px;margin:0 auto;padding:0 16px 40px;}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 2px 10px;}
+  .brand{display:flex;align-items:center;gap:8px;}
+  .brand-mark{font-size:26px;line-height:1;}
+  .brand h1{font-size:21px;letter-spacing:0.2px;}
+  .icon-btn{background:var(--card);border:1px solid var(--border);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:var(--shadow);color:var(--ink);}
+
+  .tabs{display:flex;gap:6px;background:var(--bg-alt);padding:4px;border-radius:999px;margin-bottom:16px;}
+  .tab{flex:1;border:none;background:transparent;padding:10px 8px;border-radius:999px;font-size:14.5px;font-weight:600;color:var(--ink-soft);}
+  .tab.active{background:var(--card);color:var(--ink);box-shadow:var(--shadow);}
+
+  .daypills{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;scrollbar-width:none;}
+  .daypills::-webkit-scrollbar{display:none;}
+  .daypill{flex:0 0 auto;border:1px solid var(--border);background:var(--card);color:var(--ink-soft);border-radius:999px;padding:9px 16px;font-size:13.5px;font-weight:600;white-space:nowrap;}
+  .daypill.active{background:var(--ink);color:var(--bg);border-color:var(--ink);}
+
+  .totals-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:16px;}
+  .totals-title{font-size:12px;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink-soft);margin-bottom:10px;font-weight:700;}
+  .metric-row{margin-bottom:14px;}
+  .metric-row:last-child{margin-bottom:0;}
+  .metric-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+  .metric-name{font-size:13.5px;font-weight:600;color:var(--ink-soft);}
+  .metric-value{font-size:15px;font-weight:700;}
+  .metric-status{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;}
+  .status-good{background:var(--good-tint);color:var(--good);}
+  .status-warn{background:var(--warn-tint);color:var(--warn);}
+  .status-bad{background:var(--bad-tint);color:var(--bad);}
+  .bar-track{position:relative;height:12px;border-radius:8px;background:var(--bg-alt);overflow:hidden;}
+  .bar-band{position:absolute;top:0;bottom:0;background:var(--good-tint);}
+  .bar-fill{position:absolute;top:0;bottom:0;left:0;border-radius:8px;transition:width .25s ease;}
+  .fill-good{background:var(--good);}
+  .fill-warn{background:var(--warn);}
+  .fill-bad{background:var(--bad);}
+  .stat-chips{display:flex;gap:10px;margin-top:14px;}
+  .chip{flex:1;background:var(--bg-alt);border-radius:var(--radius-sm);padding:8px 10px;text-align:center;}
+  .chip .n{font-size:15px;font-weight:700;display:block;}
+  .chip .l{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.5px;}
+
+  .slot-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:var(--shadow);}
+  .slot-label{font-size:11.5px;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink-soft);font-weight:700;margin-bottom:6px;}
+  .slot-main{display:flex;align-items:center;gap:12px;}
+  .slot-icon{font-size:30px;width:44px;text-align:center;flex:0 0 auto;}
+  .slot-info{flex:1;min-width:0;}
+  .slot-name{font-size:15.5px;font-weight:700;line-height:1.25;}
+  .slot-macros{font-size:12.5px;color:var(--ink-soft);margin-top:3px;}
+  .change-btn{flex:0 0 auto;background:var(--accent-tint);color:var(--accent-dark);border:none;padding:9px 14px;border-radius:999px;font-size:13px;font-weight:700;}
+  .snack-empty{display:flex;align-items:center;justify-content:space-between;}
+  .add-snack-btn{background:var(--bg-alt);border:1.5px dashed var(--border);color:var(--ink-soft);padding:10px 14px;border-radius:var(--radius-sm);font-size:13.5px;font-weight:600;width:100%;text-align:left;}
+  .remove-snack{background:none;border:none;color:var(--ink-soft);font-size:12px;text-decoration:underline;margin-top:6px;padding:2px;}
+
+  .shop-scope{display:flex;gap:6px;background:var(--bg-alt);padding:4px;border-radius:999px;margin-bottom:14px;}
+  .shop-actions{display:flex;justify-content:flex-end;margin-bottom:10px;}
+  .clear-btn{background:none;border:none;color:var(--accent);font-size:13px;font-weight:700;}
+  .shop-group{margin-bottom:18px;}
+  .shop-group h3{font-size:14px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;font-weight:700;}
+  .shop-item{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border);}
+  .shop-item:last-child{border-bottom:none;}
+  .shop-check{width:22px;height:22px;border-radius:7px;border:2px solid var(--border);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--card);}
+  .shop-check.checked{background:var(--good);border-color:var(--good);}
+  .shop-text{flex:1;font-size:14.5px;}
+  .shop-text .qty{color:var(--ink-soft);font-weight:600;margin-right:6px;}
+  .shop-item.checked .shop-text{text-decoration:line-through;color:var(--ink-soft);}
+
+  .sheet-backdrop{position:fixed;inset:0;background:rgba(20,18,15,0.45);display:flex;align-items:flex-end;z-index:50;}
+  .sheet-backdrop[hidden]{display:none;}
+  .sheet{background:var(--bg);width:100%;max-width:520px;margin:0 auto;border-radius:22px 22px 0 0;padding:10px 18px calc(20px + env(safe-area-inset-bottom));max-height:80vh;overflow-y:auto;}
+  .sheet-handle{width:38px;height:5px;background:var(--border);border-radius:4px;margin:6px auto 14px;}
+  .sheet h3{font-size:18px;margin-bottom:12px;}
+  .option-row{display:flex;align-items:center;gap:12px;padding:12px 8px;border-radius:var(--radius-sm);margin-bottom:6px;border:1px solid transparent;}
+  .option-row.selected{background:var(--accent-tint);border-color:var(--accent);}
+  .option-icon{font-size:26px;width:36px;text-align:center;}
+  .option-info{flex:1;}
+  .option-name{font-size:14.5px;font-weight:700;}
+  .option-macros{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .sheet-close{width:100%;margin-top:8px;background:var(--ink);color:var(--bg);border:none;padding:13px;border-radius:999px;font-weight:700;font-size:15px;}
+
+  .settings-field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+  .settings-field label{font-size:12.5px;color:var(--ink-soft);font-weight:600;}
+  .settings-field input{border:1px solid var(--border);background:var(--card);border-radius:var(--radius-sm);padding:10px 12px;font-size:15px;color:var(--ink);}
+  .settings-row{display:flex;gap:10px;}
+  .settings-row .settings-field{flex:1;}
+  .save-btn{width:100%;background:var(--accent);color:#fff;border:none;padding:13px;border-radius:999px;font-weight:700;font-size:15px;margin-top:4px;}
+  .cancel-btn{width:100%;background:none;border:none;color:var(--ink-soft);padding:12px;font-size:14px;font-weight:600;}
+
+  .tip-banner{background:var(--accent-tint);color:var(--accent-dark);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;margin-bottom:14px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start;line-height:1.4;}
+  .tip-banner button{background:none;border:none;color:var(--accent-dark);font-weight:700;font-size:16px;line-height:1;flex:0 0 auto;}
+
+  .footer-link{display:block;text-align:center;margin-top:22px;font-size:13px;color:var(--ink-soft);background:none;border:none;width:100%;text-decoration:underline;}
+  .install-steps{font-size:14px;line-height:1.7;}
+  .install-steps b{color:var(--accent-dark);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <div class="brand"><span class="brand-mark">🍽️</span><h1>ProteinPlan</h1></div>
+    <button class="icon-btn" id="settingsBtn" aria-label="Targets">⚙️</button>
+  </div>
+
+  <div class="tip-banner" id="tipBanner" hidden>
+    <span>Tap <b>Change</b> on any meal to swap it for another option — your totals and shopping list update automatically.</span>
+    <button id="tipClose" aria-label="Dismiss">✕</button>
+  </div>
+
+  <div class="tabs" id="mainTabs">
+    <button class="tab active" data-tab="plan">Plan</button>
+    <button class="tab" data-tab="shopping">Shopping List</button>
+  </div>
+
+  <section id="planView">
+    <div class="daypills" id="dayPills"></div>
+    <div class="totals-card" id="totalsCard"></div>
+    <div id="slots"></div>
+  </section>
+
+  <section id="shoppingView" hidden>
+    <div class="shop-scope" id="scopeToggle">
+      <button class="tab active" data-scope="week">Whole Week</button>
+      <button class="tab" data-scope="day">Today Only</button>
+    </div>
+    <div class="shop-actions"><button class="clear-btn" id="clearChecks">Clear checks</button></div>
+    <div id="shopList"></div>
+  </section>
+
+  <button class="footer-link" id="installLink">📲 How to add ProteinPlan to your Home Screen</button>
+</div>
+
+<div class="sheet-backdrop" id="pickerBackdrop" hidden>
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="pickerTitle">Choose a meal</h3>
+    <div id="pickerList"></div>
+    <button class="sheet-close" id="pickerClose">Close</button>
+  </div>
+</div>
+
+<div class="sheet-backdrop" id="settingsBackdrop" hidden>
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>Daily Targets</h3>
+    <div class="settings-row">
+      <div class="settings-field"><label>Protein min (g)</label><input type="number" id="proteinMin"></div>
+      <div class="settings-field"><label>Protein max (g)</label><input type="number" id="proteinMax"></div>
+    </div>
+    <div class="settings-row">
+      <div class="settings-field"><label>Calories min</label><input type="number" id="calMin"></div>
+      <div class="settings-field"><label>Calories max</label><input type="number" id="calMax"></div>
+    </div>
+    <button class="save-btn" id="saveTargets">Save</button>
+    <button class="cancel-btn" id="closeSettings">Cancel</button>
+  </div>
+</div>
+
+<div class="sheet-backdrop" id="installBackdrop" hidden>
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>Add to Home Screen</h3>
+    <div class="install-steps">
+      1. Open this page in <b>Safari</b> on your iPhone.<br>
+      2. Tap the <b>Share</b> icon (square with an arrow) in the toolbar.<br>
+      3. Scroll down and tap <b>Add to Home Screen</b>.<br>
+      4. Tap <b>Add</b> — ProteinPlan will now open like a regular app, full‑screen, right from your Home Screen.
+    </div>
+    <button class="sheet-close" id="installClose">Got it</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- Meal Library ---------- */
+  var MEALS = {
+    breakfast: [
+      {id:"b1",icon:"🥚",name:"Egg White & Turkey Bacon Scramble",cal:420,protein:42,carbs:20,fat:16,
+        ing:[{n:"Egg whites",q:3,u:"whites"},{n:"Eggs",q:2,u:"whole"},{n:"Turkey bacon",q:2,u:"oz"},{n:"Spinach",q:1,u:"cup"},{n:"Ezekiel bread",q:1,u:"slice"}]},
+      {id:"b2",icon:"🥣",name:"Greek Yogurt Protein Bowl",cal:430,protein:55,carbs:30,fat:10,
+        ing:[{n:"Non-fat Greek yogurt",q:1.5,u:"cup"},{n:"Vanilla protein powder",q:1,u:"scoop"},{n:"Mixed berries",q:0.5,u:"cup"},{n:"Almond butter",q:1,u:"tbsp"}]},
+      {id:"b3",icon:"🐔",name:"Chicken Sausage Egg Muffins + Fruit",cal:380,protein:38,carbs:25,fat:14,
+        ing:[{n:"Chicken sausage",q:4,u:"oz"},{n:"Eggs",q:4,u:"whole"},{n:"Bell pepper",q:0.5,u:"cup"},{n:"Mixed fruit",q:1,u:"cup"}]},
+      {id:"b4",icon:"🥣",name:"Protein Oats with Peanut Butter",cal:450,protein:40,carbs:45,fat:14,
+        ing:[{n:"Rolled oats",q:0.5,u:"cup"},{n:"Vanilla protein powder",q:1,u:"scoop"},{n:"Peanut butter",q:1,u:"tbsp"},{n:"Cinnamon",q:1,u:"tsp"}]},
+      {id:"b5",icon:"🐟",name:"Smoked Salmon & Cottage Cheese Toast",cal:380,protein:40,carbs:28,fat:12,
+        ing:[{n:"Smoked salmon",q:3,u:"oz"},{n:"Low-fat cottage cheese",q:0.5,u:"cup"},{n:"Whole grain bread",q:1,u:"slice"},{n:"Capers",q:1,u:"tsp"}]},
+      {id:"b6",icon:"🦃",name:"Turkey & Egg Breakfast Burrito",cal:460,protein:45,carbs:32,fat:16,
+        ing:[{n:"Ground turkey",q:4,u:"oz"},{n:"Eggs",q:2,u:"whole"},{n:"Low-carb tortilla",q:1,u:"whole"},{n:"Salsa",q:2,u:"tbsp"},{n:"Light shredded cheese",q:0.25,u:"cup"}]},
+      {id:"b7",icon:"🥞",name:"Cottage Cheese Protein Pancakes",cal:380,protein:38,carbs:34,fat:10,
+        ing:[{n:"Vanilla protein powder",q:1,u:"scoop"},{n:"Egg whites",q:2,u:"whites"},{n:"Banana",q:0.5,u:"whole"},{n:"Low-fat cottage cheese",q:0.25,u:"cup"}]},
+      {id:"b8",icon:"🥩",name:"Steak & Eggs",cal:480,protein:46,carbs:10,fat:26,
+        ing:[{n:"Sirloin steak",q:4,u:"oz"},{n:"Eggs",q:2,u:"whole"},{n:"Bell pepper",q:1,u:"cup"},{n:"Onion",q:0.25,u:"cup"}]}
+    ],
+    lunch: [
+      {id:"l1",icon:"🐔",name:"Grilled Chicken & Quinoa Power Bowl",cal:520,protein:50,carbs:35,fat:15,
+        ing:[{n:"Chicken breast",q:6,u:"oz"},{n:"Quinoa",q:0.5,u:"cup"},{n:"Broccoli",q:1,u:"cup"},{n:"Olive oil",q:1,u:"tbsp"}]},
+      {id:"l2",icon:"🐟",name:"Tuna Salad Lettuce Wraps",cal:380,protein:55,carbs:8,fat:12,
+        ing:[{n:"Canned tuna",q:10,u:"oz"},{n:"Non-fat Greek yogurt",q:0.125,u:"cup"},{n:"Celery",q:0.25,u:"cup"},{n:"Romaine lettuce",q:4,u:"leaf"}]},
+      {id:"l3",icon:"🥩",name:"Steak & Sweet Potato Bowl",cal:550,protein:48,carbs:40,fat:18,
+        ing:[{n:"Sirloin steak",q:6,u:"oz"},{n:"Sweet potato",q:1,u:"medium"},{n:"Green beans",q:1,u:"cup"}]},
+      {id:"l4",icon:"🦃",name:"Turkey Chili",cal:480,protein:45,carbs:40,fat:12,
+        ing:[{n:"Ground turkey",q:6,u:"oz"},{n:"Black beans",q:0.5,u:"cup"},{n:"Diced tomatoes",q:0.5,u:"cup"},{n:"Onion",q:0.25,u:"cup"}]},
+      {id:"l5",icon:"🐔",name:"Chicken Caesar Salad (light)",cal:450,protein:50,carbs:15,fat:18,
+        ing:[{n:"Chicken breast",q:6,u:"oz"},{n:"Romaine lettuce",q:3,u:"cup"},{n:"Parmesan cheese",q:2,u:"tbsp"},{n:"Light caesar dressing",q:1.5,u:"tbsp"},{n:"Croutons",q:0.25,u:"cup"}]},
+      {id:"l6",icon:"🦐",name:"Shrimp & Brown Rice Stir Fry",cal:450,protein:42,carbs:38,fat:12,
+        ing:[{n:"Shrimp",q:6,u:"oz"},{n:"Brown rice",q:0.5,u:"cup"},{n:"Mixed stir-fry vegetables",q:1.5,u:"cup"},{n:"Low-sodium soy sauce",q:1,u:"tbsp"}]},
+      {id:"l7",icon:"🦃",name:"Turkey & Hummus Wrap",cal:400,protein:40,carbs:30,fat:14,
+        ing:[{n:"Sliced turkey breast",q:5,u:"oz"},{n:"Low-carb tortilla",q:1,u:"whole"},{n:"Hummus",q:2,u:"tbsp"},{n:"Cucumber",q:0.5,u:"cup"}]},
+      {id:"l8",icon:"🐟",name:"Cottage Cheese & Tuna Plate",cal:380,protein:55,carbs:12,fat:10,
+        ing:[{n:"Low-fat cottage cheese",q:1,u:"cup"},{n:"Canned tuna",q:5,u:"oz"},{n:"Cucumber",q:0.5,u:"cup"},{n:"Tomato",q:0.5,u:"cup"}]}
+    ],
+    dinner: [
+      {id:"d1",icon:"🥩",name:"Grilled Steak with Asparagus",cal:560,protein:60,carbs:12,fat:28,
+        ing:[{n:"Sirloin steak",q:8,u:"oz"},{n:"Asparagus",q:1.5,u:"cup"},{n:"Olive oil",q:1,u:"tbsp"}]},
+      {id:"d2",icon:"🐟",name:"Baked Salmon & Roasted Veggies",cal:480,protein:42,carbs:18,fat:24,
+        ing:[{n:"Salmon fillet",q:6,u:"oz"},{n:"Broccoli",q:1,u:"cup"},{n:"Cauliflower",q:1,u:"cup"},{n:"Olive oil",q:1,u:"tbsp"}]},
+      {id:"d3",icon:"🐔",name:"Chicken Stir Fry with Veggies",cal:500,protein:52,carbs:35,fat:14,
+        ing:[{n:"Chicken breast",q:7,u:"oz"},{n:"Mixed stir-fry vegetables",q:1.5,u:"cup"},{n:"Brown rice",q:0.33,u:"cup"},{n:"Low-sodium soy sauce",q:1,u:"tbsp"}]},
+      {id:"d4",icon:"🦃",name:"Turkey Meatballs & Zucchini Noodles",cal:460,protein:48,carbs:20,fat:18,
+        ing:[{n:"Ground turkey",q:7,u:"oz"},{n:"Zucchini",q:2,u:"cup"},{n:"Marinara sauce",q:0.5,u:"cup"},{n:"Parmesan cheese",q:1,u:"tbsp"}]},
+      {id:"d5",icon:"🦐",name:"Grilled Shrimp Skewers & Cauliflower Rice",cal:380,protein:48,carbs:14,fat:14,
+        ing:[{n:"Shrimp",q:8,u:"oz"},{n:"Cauliflower rice",q:1.5,u:"cup"},{n:"Lemon",q:0.5,u:"whole"},{n:"Olive oil",q:1,u:"tbsp"}]},
+      {id:"d6",icon:"🐔",name:"Blackened Chicken & Roasted Brussels",cal:470,protein:55,carbs:18,fat:18,
+        ing:[{n:"Chicken breast",q:7,u:"oz"},{n:"Brussels sprouts",q:1.5,u:"cup"},{n:"Olive oil",q:1,u:"tbsp"},{n:"Cajun seasoning",q:1,u:"tsp"}]},
+      {id:"d7",icon:"🥩",name:"Sirloin Steak Fajita Bowl",cal:520,protein:46,carbs:38,fat:18,
+        ing:[{n:"Sirloin steak",q:6,u:"oz"},{n:"Bell pepper",q:1,u:"cup"},{n:"Onion",q:0.5,u:"cup"},{n:"Brown rice",q:0.33,u:"cup"},{n:"Non-fat Greek yogurt",q:0.125,u:"cup"}]},
+      {id:"d8",icon:"🐟",name:"Baked Cod & Garlic Green Beans",cal:380,protein:50,carbs:16,fat:10,
+        ing:[{n:"Cod fillet",q:8,u:"oz"},{n:"Green beans",q:1.5,u:"cup"},{n:"Garlic",q:2,u:"clove"},{n:"Olive oil",q:1,u:"tbsp"}]}
+    ],
+    snack: [
+      {id:"s1",icon:"🥤",name:"Protein Shake",cal:120,protein:24,carbs:3,fat:1,ing:[{n:"Whey protein powder",q:1,u:"scoop"}]},
+      {id:"s2",icon:"🥛",name:"Greek Yogurt Cup",cal:130,protein:22,carbs:8,fat:0,ing:[{n:"Non-fat Greek yogurt",q:1,u:"cup"}]},
+      {id:"s3",icon:"🍖",name:"Beef Jerky",cal:140,protein:20,carbs:6,fat:4,ing:[{n:"Beef jerky",q:2,u:"oz"}]},
+      {id:"s4",icon:"🧀",name:"Cottage Cheese Cup",cal:160,protein:28,carbs:6,fat:2,ing:[{n:"Low-fat cottage cheese",q:1,u:"cup"}]}
+    ]
+  };
+
+  var CATEGORY = {
+    "Egg whites":"Dairy & Eggs","Eggs":"Dairy & Eggs","Non-fat Greek yogurt":"Dairy & Eggs",
+    "Low-fat cottage cheese":"Dairy & Eggs","Parmesan cheese":"Dairy & Eggs","Light shredded cheese":"Dairy & Eggs",
+    "Turkey bacon":"Meat & Seafood","Chicken sausage":"Meat & Seafood","Smoked salmon":"Meat & Seafood",
+    "Ground turkey":"Meat & Seafood","Sirloin steak":"Meat & Seafood","Chicken breast":"Meat & Seafood",
+    "Canned tuna":"Meat & Seafood","Shrimp":"Meat & Seafood","Salmon fillet":"Meat & Seafood",
+    "Sliced turkey breast":"Meat & Seafood","Cod fillet":"Meat & Seafood","Beef jerky":"Meat & Seafood",
+    "Spinach":"Produce","Bell pepper":"Produce","Mixed fruit":"Produce","Celery":"Produce","Romaine lettuce":"Produce",
+    "Sweet potato":"Produce","Green beans":"Produce","Onion":"Produce","Broccoli":"Produce","Cauliflower":"Produce",
+    "Zucchini":"Produce","Cucumber":"Produce","Tomato":"Produce","Asparagus":"Produce","Brussels sprouts":"Produce",
+    "Cauliflower rice":"Produce","Lemon":"Produce","Garlic":"Produce","Banana":"Produce","Mixed berries":"Produce",
+    "Mixed stir-fry vegetables":"Produce","Diced tomatoes":"Produce",
+    "Ezekiel bread":"Grains & Pantry","Whole grain bread":"Grains & Pantry","Low-carb tortilla":"Grains & Pantry",
+    "Rolled oats":"Grains & Pantry","Vanilla protein powder":"Grains & Pantry","Whey protein powder":"Grains & Pantry",
+    "Quinoa":"Grains & Pantry","Brown rice":"Grains & Pantry","Black beans":"Grains & Pantry","Croutons":"Grains & Pantry",
+    "Hummus":"Grains & Pantry","Marinara sauce":"Grains & Pantry","Peanut butter":"Grains & Pantry","Almond butter":"Grains & Pantry",
+    "Olive oil":"Condiments & Other","Salsa":"Condiments & Other","Capers":"Condiments & Other","Cinnamon":"Condiments & Other",
+    "Light caesar dressing":"Condiments & Other","Low-sodium soy sauce":"Condiments & Other","Cajun seasoning":"Condiments & Other"
+  };
+  var CAT_ORDER = ["Meat & Seafood","Dairy & Eggs","Produce","Grains & Pantry","Condiments & Other"];
+
+  var DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  var UNIT_PLURAL = {oz:"oz",tbsp:"tbsp",tsp:"tsp",cup:"cups",whole:"",whites:"",scoop:"scoops",medium:"",clove:"cloves",leaf:"leaves",slice:"slices"};
+  var UNIT_SINGULAR = {oz:"oz",tbsp:"tbsp",tsp:"tsp",cup:"cup",whole:"",whites:"",scoop:"scoop",medium:"",clove:"clove",leaf:"leaf",slice:"slice"};
+
+  /* ---------- State ---------- */
+  var STORAGE_KEY = "proteinPlanState_v1";
+  var state = null;
+
+  function defaultSelections(){
+    var sel = {};
+    DAYS.forEach(function(day, i){
+      sel[day] = {
+        breakfast: MEALS.breakfast[i % MEALS.breakfast.length].id,
+        lunch: MEALS.lunch[i % MEALS.lunch.length].id,
+        dinner: MEALS.dinner[i % MEALS.dinner.length].id,
+        snackEnabled: false,
+        snack: MEALS.snack[i % MEALS.snack.length].id
+      };
+    });
+    return sel;
+  }
+
+  function defaultState(){
+    return {
+      activeDay: DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay()-1],
+      activeTab: "plan",
+      scope: "week",
+      selections: defaultSelections(),
+      targets: {proteinMin:150, proteinMax:200, calMin:1800, calMax:2000},
+      checked: {},
+      tipDismissed: false
+    };
+  }
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return defaultState();
+      var parsed = JSON.parse(raw);
+      var d = defaultState();
+      return Object.assign(d, parsed, {
+        selections: Object.assign(d.selections, parsed.selections || {}),
+        targets: Object.assign(d.targets, parsed.targets || {}),
+        checked: parsed.checked || {}
+      });
+    }catch(e){ return defaultState(); }
+  }
+
+  function saveState(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function getMeal(cat, id){
+    var list = MEALS[cat];
+    for(var i=0;i<list.length;i++){ if(list[i].id === id) return list[i]; }
+    return list[0];
+  }
+
+  /* ---------- Totals ---------- */
+  function computeTotals(day){
+    var sel = state.selections[day];
+    var totals = {cal:0, protein:0, carbs:0, fat:0};
+    ["breakfast","lunch","dinner"].forEach(function(slot){
+      var m = getMeal(slot, sel[slot]);
+      totals.cal += m.cal; totals.protein += m.protein; totals.carbs += m.carbs; totals.fat += m.fat;
+    });
+    if(sel.snackEnabled){
+      var s = getMeal("snack", sel.snack);
+      totals.cal += s.cal; totals.protein += s.protein; totals.carbs += s.carbs; totals.fat += s.fat;
+    }
+    return totals;
+  }
+
+  function statusFor(value, min, max){
+    if(value >= min && value <= max) return "good";
+    var ref = value < min ? min : max;
+    var dev = Math.abs(value - ref) / ref;
+    return dev <= 0.15 ? "warn" : "bad";
+  }
+
+  /* ---------- Rendering ---------- */
+  function el(tag, cls, html){
+    var e = document.createElement(tag);
+    if(cls) e.className = cls;
+    if(html !== undefined) e.innerHTML = html;
+    return e;
+  }
+
+  function renderDayPills(){
+    var wrap = document.getElementById("dayPills");
+    wrap.innerHTML = "";
+    DAYS.forEach(function(day){
+      var b = el("button","daypill" + (day===state.activeDay ? " active":""), day);
+      b.addEventListener("click", function(){ state.activeDay = day; saveState(); render(); });
+      wrap.appendChild(b);
+    });
+  }
+
+  function renderBar(current, min, max, scaleMax, status){
+    var minPct = Math.min(100, (min/scaleMax)*100);
+    var widthPct = Math.min(100-minPct, ((max-min)/scaleMax)*100);
+    var fillPct = Math.min(100, (current/scaleMax)*100);
+    var fillClass = status==="good" ? "fill-good" : status==="warn" ? "fill-warn" : "fill-bad";
+    return '<div class="bar-track">' +
+      '<div class="bar-band" style="left:'+minPct+'%;width:'+widthPct+'%"></div>' +
+      '<div class="bar-fill '+fillClass+'" style="width:'+fillPct+'%"></div>' +
+      '</div>';
+  }
+
+  function statusLabel(status){
+    return status==="good" ? "✅ In range" : status==="warn" ? "〜 Close" : "⚠ Off target";
+  }
+
+  function renderTotals(){
+    var t = computeTotals(state.activeDay);
+    var tg = state.targets;
+    var pStatus = statusFor(t.protein, tg.proteinMin, tg.proteinMax);
+    var cStatus = statusFor(t.cal, tg.calMin, tg.calMax);
+    var card = document.getElementById("totalsCard");
+    card.innerHTML =
+      '<div class="totals-title">'+state.activeDay+' Totals</div>' +
+      '<div class="metric-row">' +
+        '<div class="metric-head"><span class="metric-name">Protein</span>' +
+        '<span class="metric-value">'+Math.round(t.protein)+'g <span class="metric-status status-'+pStatus+'">'+statusLabel(pStatus)+'</span></span></div>' +
+        renderBar(t.protein, tg.proteinMin, tg.proteinMax, 260, pStatus) +
+      '</div>' +
+      '<div class="metric-row">' +
+        '<div class="metric-head"><span class="metric-name">Calories</span>' +
+        '<span class="metric-value">'+Math.round(t.cal)+' <span class="metric-status status-'+cStatus+'">'+statusLabel(cStatus)+'</span></span></div>' +
+        renderBar(t.cal, tg.calMin, tg.calMax, 2600, cStatus) +
+      '</div>' +
+      '<div class="stat-chips">' +
+        '<div class="chip"><span class="n">'+Math.round(t.carbs)+'g</span><span class="l">Carbs</span></div>' +
+        '<div class="chip"><span class="n">'+Math.round(t.fat)+'g</span><span class="l">Fat</span></div>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--ink-soft);margin-top:10px;">Target: '+tg.proteinMin+'–'+tg.proteinMax+'g protein · '+tg.calMin+'–'+tg.calMax+' cal &nbsp;(tap ⚙️ to edit)</div>';
+  }
+
+  var SLOT_LABELS = {breakfast:"Breakfast", lunch:"Lunch", dinner:"Dinner"};
+
+  function renderSlots(){
+    var wrap = document.getElementById("slots");
+    wrap.innerHTML = "";
+    var sel = state.selections[state.activeDay];
+
+    ["breakfast","lunch","dinner"].forEach(function(slot){
+      var m = getMeal(slot, sel[slot]);
+      var card = el("div","slot-card");
+      card.innerHTML =
+        '<div class="slot-label">'+SLOT_LABELS[slot]+'</div>' +
+        '<div class="slot-main">' +
+          '<div class="slot-icon">'+m.icon+'</div>' +
+          '<div class="slot-info"><div class="slot-name">'+m.name+'</div>' +
+          '<div class="slot-macros">'+m.cal+' cal · '+m.protein+'g protein · '+m.carbs+'g carb · '+m.fat+'g fat</div></div>' +
+          '<button class="change-btn" data-slot="'+slot+'">Change</button>' +
+        '</div>';
+      wrap.appendChild(card);
+    });
+
+    var snackCard = el("div","slot-card");
+    if(sel.snackEnabled){
+      var s = getMeal("snack", sel.snack);
+      snackCard.innerHTML =
+        '<div class="slot-label">Optional Snack</div>' +
+        '<div class="slot-main">' +
+          '<div class="slot-icon">'+s.icon+'</div>' +
+          '<div class="slot-info"><div class="slot-name">'+s.name+'</div>' +
+          '<div class="slot-macros">'+s.cal+' cal · '+s.protein+'g protein · '+s.carbs+'g carb · '+s.fat+'g fat</div></div>' +
+          '<button class="change-btn" data-slot="snack">Change</button>' +
+        '</div>' +
+        '<button class="remove-snack" id="removeSnack">Remove snack</button>';
+    } else {
+      snackCard.innerHTML = '<button class="add-snack-btn" id="addSnackBtn">+ Add an optional protein snack (shake, yogurt, jerky...)</button>';
+    }
+    wrap.appendChild(snackCard);
+
+    wrap.querySelectorAll(".change-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){ openPicker(btn.getAttribute("data-slot")); });
+    });
+    var addBtn = document.getElementById("addSnackBtn");
+    if(addBtn) addBtn.addEventListener("click", function(){
+      state.selections[state.activeDay].snackEnabled = true; saveState(); render();
+    });
+    var remBtn = document.getElementById("removeSnack");
+    if(remBtn) remBtn.addEventListener("click", function(){
+      state.selections[state.activeDay].snackEnabled = false; saveState(); render();
+    });
+  }
+
+  function openPicker(slot){
+    var backdrop = document.getElementById("pickerBackdrop");
+    var title = document.getElementById("pickerTitle");
+    var list = document.getElementById("pickerList");
+    var label = slot==="snack" ? "Snack" : SLOT_LABELS[slot];
+    title.textContent = "Choose "+label.toLowerCase()+" option";
+    var currentId = state.selections[state.activeDay][slot];
+    list.innerHTML = "";
+    MEALS[slot].forEach(function(m){
+      var row = el("div","option-row"+(m.id===currentId?" selected":""));
+      row.innerHTML =
+        '<div class="option-icon">'+m.icon+'</div>' +
+        '<div class="option-info"><div class="option-name">'+m.name+'</div>' +
+        '<div class="option-macros">'+m.cal+' cal · '+m.protein+'g protein · '+m.carbs+'g carb · '+m.fat+'g fat</div></div>';
+      row.addEventListener("click", function(){
+        state.selections[state.activeDay][slot] = m.id;
+        if(slot === "snack") state.selections[state.activeDay].snackEnabled = true;
+        saveState();
+        backdrop.setAttribute("hidden","");
+        render();
+      });
+      list.appendChild(row);
+    });
+    backdrop.removeAttribute("hidden");
+  }
+
+  /* ---------- Shopping List ---------- */
+  function niceQty(u, q){
+    var rounded = Math.round(q*4)/4;
+    if(Math.abs(rounded - Math.round(rounded)) < 0.001) rounded = Math.round(rounded);
+    var str = (rounded % 1 === 0) ? String(rounded) : String(rounded);
+    var label = rounded===1 ? UNIT_SINGULAR[u] : UNIT_PLURAL[u];
+    return label ? (str+" "+label) : str;
+  }
+
+  function aggregateIngredients(days){
+    var totals = {}; // key: name|unit -> qty
+    days.forEach(function(day){
+      var sel = state.selections[day];
+      var slots = ["breakfast","lunch","dinner"];
+      var meals = slots.map(function(s){ return getMeal(s, sel[s]); });
+      if(sel.snackEnabled) meals.push(getMeal("snack", sel.snack));
+      meals.forEach(function(m){
+        m.ing.forEach(function(item){
+          var key = item.n + "|" + item.u;
+          totals[key] = (totals[key]||0) + item.q;
+        });
+      });
+    });
+    return totals;
+  }
+
+  function renderShopping(){
+    var days = state.scope === "week" ? DAYS : [state.activeDay];
+    var totals = aggregateIngredients(days);
+    var groups = {};
+    CAT_ORDER.forEach(function(c){ groups[c] = []; });
+    Object.keys(totals).forEach(function(key){
+      var parts = key.split("|");
+      var name = parts[0], unit = parts[1];
+      var cat = CATEGORY[name] || "Condiments & Other";
+      groups[cat].push({name:name, unit:unit, qty:totals[key]});
+    });
+    var wrap = document.getElementById("shopList");
+    wrap.innerHTML = "";
+    var any = false;
+    CAT_ORDER.forEach(function(cat){
+      var items = groups[cat];
+      if(!items.length) return;
+      any = true;
+      items.sort(function(a,b){ return a.name.localeCompare(b.name); });
+      var g = el("div","shop-group");
+      g.appendChild(el("h3", null, cat));
+      items.forEach(function(item){
+        var key = item.name+"|"+item.unit;
+        var isChecked = !!state.checked[key];
+        var row = el("div","shop-item"+(isChecked?" checked":""));
+        row.innerHTML =
+          '<div class="shop-check'+(isChecked?" checked":"")+'">'+(isChecked?"✓":"")+'</div>' +
+          '<div class="shop-text"><span class="qty">'+niceQty(item.unit,item.qty)+'</span>'+item.name+'</div>';
+        row.addEventListener("click", function(){
+          state.checked[key] = !state.checked[key];
+          saveState(); renderShopping();
+        });
+        g.appendChild(row);
+      });
+      wrap.appendChild(g);
+    });
+    if(!any) wrap.appendChild(el("div", null, '<p style="color:var(--ink-soft);font-size:14px;">No items yet.</p>'));
+  }
+
+  /* ---------- Tabs / Settings ---------- */
+  function switchTab(tab){
+    state.activeTab = tab;
+    saveState();
+    document.querySelectorAll("#mainTabs .tab").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-tab")===tab);
+    });
+    document.getElementById("planView").hidden = tab !== "plan";
+    document.getElementById("shoppingView").hidden = tab !== "shopping";
+    if(tab === "shopping") renderShopping();
+  }
+
+  function switchScope(scope){
+    state.scope = scope;
+    saveState();
+    document.querySelectorAll("#scopeToggle .tab").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-scope")===scope);
+    });
+    renderShopping();
+  }
+
+  function openSettings(){
+    document.getElementById("proteinMin").value = state.targets.proteinMin;
+    document.getElementById("proteinMax").value = state.targets.proteinMax;
+    document.getElementById("calMin").value = state.targets.calMin;
+    document.getElementById("calMax").value = state.targets.calMax;
+    document.getElementById("settingsBackdrop").removeAttribute("hidden");
+  }
+
+  /* ---------- Init ---------- */
+  function render(){
+    renderDayPills();
+    renderTotals();
+    renderSlots();
+    if(state.activeTab === "shopping") renderShopping();
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    state = loadState();
+
+    document.querySelectorAll("#mainTabs .tab").forEach(function(b){
+      b.addEventListener("click", function(){ switchTab(b.getAttribute("data-tab")); });
+    });
+    document.querySelectorAll("#scopeToggle .tab").forEach(function(b){
+      b.addEventListener("click", function(){ switchScope(b.getAttribute("data-scope")); });
+    });
+
+    document.getElementById("pickerClose").addEventListener("click", function(){
+      document.getElementById("pickerBackdrop").setAttribute("hidden","");
+    });
+    document.getElementById("pickerBackdrop").addEventListener("click", function(e){
+      if(e.target === this) this.setAttribute("hidden","");
+    });
+
+    document.getElementById("settingsBtn").addEventListener("click", openSettings);
+    document.getElementById("closeSettings").addEventListener("click", function(){
+      document.getElementById("settingsBackdrop").setAttribute("hidden","");
+    });
+    document.getElementById("saveTargets").addEventListener("click", function(){
+      var pMin = parseFloat(document.getElementById("proteinMin").value) || state.targets.proteinMin;
+      var pMax = parseFloat(document.getElementById("proteinMax").value) || state.targets.proteinMax;
+      var cMin = parseFloat(document.getElementById("calMin").value) || state.targets.calMin;
+      var cMax = parseFloat(document.getElementById("calMax").value) || state.targets.calMax;
+      if(pMin > pMax){ var t=pMin; pMin=pMax; pMax=t; }
+      if(cMin > cMax){ var t2=cMin; cMin=cMax; cMax=t2; }
+      state.targets = {proteinMin:pMin, proteinMax:pMax, calMin:cMin, calMax:cMax};
+      saveState();
+      document.getElementById("settingsBackdrop").setAttribute("hidden","");
+      render();
+    });
+    document.getElementById("settingsBackdrop").addEventListener("click", function(e){
+      if(e.target === this) this.setAttribute("hidden","");
+    });
+
+    document.getElementById("clearChecks").addEventListener("click", function(){
+      state.checked = {}; saveState(); renderShopping();
+    });
+
+    document.getElementById("installLink").addEventListener("click", function(){
+      document.getElementById("installBackdrop").removeAttribute("hidden");
+    });
+    document.getElementById("installClose").addEventListener("click", function(){
+      document.getElementById("installBackdrop").setAttribute("hidden","");
+    });
+    document.getElementById("installBackdrop").addEventListener("click", function(e){
+      if(e.target === this) this.setAttribute("hidden","");
+    });
+
+    var tipBanner = document.getElementById("tipBanner");
+    if(!state.tipDismissed){ tipBanner.removeAttribute("hidden"); }
+    document.getElementById("tipClose").addEventListener("click", function(){
+      state.tipDismissed = true; saveState(); tipBanner.setAttribute("hidden","");
+    });
+
+    switchTab(state.activeTab);
+    render();
+  });
+})();
+</script>
+</body>
+</html>
